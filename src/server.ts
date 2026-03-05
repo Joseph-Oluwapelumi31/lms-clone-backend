@@ -6,11 +6,7 @@ import User from './models/User.js';
 
 async function startServer() {
    await connectDB()
-  //  await User.create({
-  //   name: "Joseph",
-  //   email: "joseph@gmail.com",
-  //   password: "123456",
-  //   });
+  
   app.listen(env.PORT, () => {
         console.log(`Server is running on port ${env.PORT}`);
     });
