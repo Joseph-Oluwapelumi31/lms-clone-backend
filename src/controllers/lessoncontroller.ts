@@ -1,6 +1,7 @@
 import {Request, Response, NextFunction} from 'express'
 import { Lesson } from '../models/Lesson.js'
 import { Course } from '../models/Course.js'
+import { Enrollment } from '../models/Enrollment.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { AppError } from '../utils/AppError.js'
 
@@ -16,14 +17,14 @@ export const createLesson = asyncHandler(
 
         }
 
-        const isOwner = course.instructor.toString() === user.id.toString();
+        const isOwner = course.instructor.toString() === user._id.toString();
 
         if(!isOwner && user.role !== 'admin'){
-            return next(new AppError('You can only edit your own course', 403))
+            return next(new AppError('You can only add lessons to your own course', 403))
         }
 
         if(!title || !type){
-            return next(new AppError('Title and types are required', 400));
+            return next(new AppError('Title and type are required', 400));
         }
         if (type === "text" && !content) {
       return next(new AppError("Text lessons require content", 400));
@@ -32,16 +33,21 @@ export const createLesson = asyncHandler(
         if (["video", "image", "pdf"].includes(type) && !mediaUrl) {
           return next(new AppError(`${type} lessons require a mediaUrl`, 400));
         }
+        const lessonsCount = await Lesson.countDocuments({ course: courseId });
+
         const lesson = await Lesson.create({
-           title,
-           type,
-           content,
-           mediaUrl,
-           thumbnailUrl,
-           duration,
-           order,
-           course: courseId,
-         });
+  title,
+  type,
+  content,
+  mediaUrl,
+  thumbnailUrl,
+  duration,
+  order: order ?? lessonsCount + 1,
+  course: courseId,
+        });
+
+        course.lessons.push(lesson._id)
+        await course.save();
 
         res.status(201).json({
           success: true,
@@ -54,12 +60,21 @@ export const createLesson = asyncHandler(
 export const getLessonByCourse = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { courseId } = req.params;
+    const user = (req as any).user;
 
     const course = await Course.findById(courseId);
 
     if (!course) {
       return next(new AppError("Course not found", 404));
     }
+
+    const isOwner = course.instructor.toString() === user._id.toString();
+
+    if(!isOwner && user.role !== 'admin'){
+      return next(new AppError("You can only view lessons in your own course"))
+    }
+
+    
 
     const lessons = await Lesson.find({ course: courseId }).sort({ order: 1 });
 
@@ -88,6 +103,42 @@ export const getLessonById = asyncHandler(
             data: lesson
         })
     }
+);
+
+export const getStudentLessonById = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { lessonId } = req.params;
+    const user = (req as any).user;
+
+    const lesson = await Lesson.findById(lessonId).populate(
+      'course', 
+      'title description isPublished'
+    );
+
+    if (!lesson) {
+      return next(new AppError("Lesson not found", 404));
+    }
+
+    const course = lesson.course as any;
+
+    if (!course || !course.isPublished) {
+      return next(new AppError("Course not found", 404));
+    }
+
+    const enrollment = await Enrollment.findOne({
+      student: user._id,
+      course: course._id,
+    });
+
+    if (!enrollment) {
+      return next(new AppError("You are not enrolled in this course", 403));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: lesson,
+    });
+  }
 );
 
 export const updateLesson = asyncHandler(
@@ -181,6 +232,11 @@ export const deleteLesson = asyncHandler(
       );
     }
 
+    course.lessons = course.lessons.filter(
+      (lessonId) => lessonId.toString() !== lesson._id.toString()
+    );
+
+    await course.save();
     await lesson.deleteOne();
 
     res.status(200).json({

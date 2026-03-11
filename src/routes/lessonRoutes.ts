@@ -1,32 +1,60 @@
-import {Router} from 'express'
-import { createLesson, getLessonByCourse, getLessonById, updateLesson, deleteLesson } from '../controllers/lessoncontroller.js'
-import { requireAuth } from '../middlewares/requireAuth.js'
-import { authorizeRoles } from '../middlewares/authorizeRoles.js'
+import { Router } from "express";
+import {
+  createLesson,
+  getLessonByCourse,
+  getLessonById,
+  getStudentLessonById,
+  updateLesson,
+  deleteLesson,
+} from "../controllers/lessoncontroller.js";
+import { requireAuth } from "../middlewares/requireAuth.js";
+import { authorizeRoles } from "../middlewares/authorizeRoles.js";
 
 const router = Router();
 
-router.get('/course/:courseId', getLessonByCourse);
-router.get('/:id', getLessonById);
+// instructor/admin lesson list by course
+router.get(
+  "/course/:courseId",
+  requireAuth,
+  authorizeRoles("instructor", "admin"),
+  getLessonByCourse
+);
+
+// student lesson detail
+router.get(
+  "/student/:lessonId",
+  requireAuth,
+  authorizeRoles("student"),
+  getStudentLessonById
+);
+
+// instructor/admin lesson detail
+router.get(
+  "/:id",
+  requireAuth,
+  authorizeRoles("instructor", "admin"),
+  getLessonById
+);
 
 router.post(
-    '/course/:courseId',
-    requireAuth,
-    authorizeRoles('instructor', 'admin'),
-    createLesson
+  "/course/:courseId",
+  requireAuth,
+  authorizeRoles("instructor", "admin"),
+  createLesson
 );
 
 router.patch(
-    '/:id',
-    requireAuth,
-    authorizeRoles('instructor', 'admin'),
-    updateLesson
+  "/:id",
+  requireAuth,
+  authorizeRoles("instructor", "admin"),
+  updateLesson
 );
 
 router.delete(
-    '/:id', 
-    requireAuth,
-    authorizeRoles('instructor', 'admin'),
-    deleteLesson
+  "/:id",
+  requireAuth,
+  authorizeRoles("instructor", "admin"),
+  deleteLesson
 );
 
-export default router
+export default router;

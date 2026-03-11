@@ -5,6 +5,7 @@ export interface Icourse extends Document {
     description: string;
     instructor: mongoose.Types.ObjectId;
     students: mongoose.Types.ObjectId[];
+    lessons: mongoose.Types.ObjectId[];
     isPublished: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -32,10 +33,16 @@ const courseSchema = new Schema<Icourse>({
         ref: "User",
       },
     ],
+    lessons: [
+      {type: Schema.Types.ObjectId,
+        ref: "Lesson"
+      }
+    ],
     isPublished: {
       type: Boolean,
       default: false,
     }
+
 
 },
 {timestamps: true}

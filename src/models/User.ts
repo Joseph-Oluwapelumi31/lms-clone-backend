@@ -1,6 +1,15 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema(
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
+  role: "student" | "instructor" | "admin";
+  enrolledCourses: mongoose.Types.ObjectId[];
+}
+
+
+const userSchema = new mongoose.Schema<IUser>(
   {
     name: {
       type: String,
@@ -26,7 +35,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["student", "instructor", "admin"],
       default: "student"
+    },
+    nationality: {
+      type: String,
+      required: false,
+      trim: true
     }
+
+
   },
   {
     timestamps: true

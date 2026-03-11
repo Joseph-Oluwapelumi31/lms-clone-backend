@@ -9,18 +9,28 @@ import { env} from './config/env.js';
 import cookieParser from 'cookie-parser'
 export const app = express();
 
-app.use(cors(
-    {
-        origin: env.FRONTRND_URL,
-        credentials: true,
-    }
-));
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  env.FRONTEND_URL,
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
+
+
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes)
 app.use('/api/lessons', lessonRoutes)
+
+
 app.get('/api/hello', (req, res) => {
     res.json({ message: 'Hello, World!' });
 });
