@@ -1,20 +1,19 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 export interface IUser extends Document {
   name: string;
   email: string;
   password: string;
   role: "student" | "instructor" | "admin";
-  enrolledCourses: mongoose.Types.ObjectId[];
+  nationality?: string;
 }
-
 
 const userSchema = new mongoose.Schema<IUser>(
   {
     name: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
 
     email: {
@@ -22,31 +21,32 @@ const userSchema = new mongoose.Schema<IUser>(
       required: true,
       unique: true,
       lowercase: true,
-      trim: true
+      trim: true,
+      index: true,
     },
 
     password: {
       type: String,
       required: true,
-      select: false
+      select: false,
     },
 
     role: {
       type: String,
       enum: ["student", "instructor", "admin"],
-      default: "student"
+      default: "student",
     },
+
     nationality: {
       type: String,
-      required: false,
-      trim: true
-    }
-
-
+      trim: true,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
-export default mongoose.model("User", userSchema);
+const User = mongoose.model<IUser>("User", userSchema);
+
+export default User;
