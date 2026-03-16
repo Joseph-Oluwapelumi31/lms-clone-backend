@@ -7,6 +7,7 @@ export interface Icourse extends Document {
     students: mongoose.Types.ObjectId[];
     lessons: mongoose.Types.ObjectId[];
     isPublished: boolean;
+    code: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -41,6 +42,11 @@ const courseSchema = new Schema<Icourse>({
     isPublished: {
       type: Boolean,
       default: false,
+    },
+    code: {
+      type: String,
+      required: true,
+      unique: true,
     }
 
 
