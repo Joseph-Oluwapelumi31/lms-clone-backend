@@ -12,11 +12,10 @@ import { authorizeRoles } from "../middlewares/authorizeRoles.js";
 
 const router = Router();
 
-// instructor/admin lesson list by course
+// lesson list by course
 router.get(
   "/course/:courseId",
   requireAuth,
-  authorizeRoles("instructor", "admin"),
   getLessonByCourse
 );
 

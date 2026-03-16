@@ -70,13 +70,20 @@ export const getLessonByCourse = asyncHandler(
 
     const isOwner = course.instructor.toString() === user._id.toString();
 
-    if(!isOwner && user.role !== 'admin'){
-      return next(new AppError("You can only view lessons in your own course"))
+    const isStudentEnrolled = user.role === 'student' && 
+    course.students?.some(
+      (studentId)=> studentId.toString() === user._id.toString()
+    );
+
+    if(!isOwner && user.role !== 'admin' && !isStudentEnrolled){
+      return next(new AppError("Not allowed to view these lessons", 403))
     }
 
     
 
-    const lessons = await Lesson.find({ course: courseId }).sort({ order: 1 });
+    
+
+    const lessons = await Lesson.find({ course: courseId }).sort({ createdAt: 1 });
 
     res.status(200).json({
       success: true,
