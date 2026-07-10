@@ -8,6 +8,10 @@ export interface Icourse extends Document {
     lessons: mongoose.Types.ObjectId[];
     isPublished: boolean;
     code: string;
+    thumbnail?: {
+      url: string;
+      public_id: string;
+    }
     createdAt: Date;
     updatedAt: Date;
 }
@@ -47,7 +51,20 @@ const courseSchema = new Schema<Icourse>({
       type: String,
       required: true,
       unique: true,
-    }
+    },
+    thumbnail: {
+      type: {
+        url: {
+          type: String,
+          required: true,
+        },
+        public_id: {
+          type: String,
+          required: true,
+        }
+      },
+      required: false,
+    },
 
 
 },

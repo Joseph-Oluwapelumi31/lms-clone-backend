@@ -1,12 +1,13 @@
 import mongoose, {Schema, Document} from 'mongoose'
-import { title } from 'node:process'
 
 export interface ILesson extends Document {
     title: string;
     type: 'text' | 'video' | 'image' | 'pdf';
     content?: string;
-    mediaUrl?: string;
-    thumbnailUrl?: string;
+    media?: {
+        url: string;
+        public_id: string;
+    };
     duration?: number;
     order: number;
     course: mongoose.Types.ObjectId;
@@ -30,14 +31,23 @@ const lessonSchema = new Schema<ILesson>(
       type: String,
       trim: true,
     },
-    mediaUrl: {
-      type: String,
-      trim: true,
+    media: {
+      type: {
+        url: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        public_id: {
+          type: String,
+          required: true,
+          trim: true,
+        }
+      },
+      required: false,
     },
-       thumbnailUrl: {
-      type: String,
-      trim: true,
-    },
+
+       
     duration: {
       type: Number,
       default: 0,

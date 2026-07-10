@@ -4,13 +4,16 @@ import { Course } from '../models/Course.js'
 import { Enrollment } from '../models/Enrollment.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { AppError } from '../utils/AppError.js'
+import cloudinary from '../config/cloudinary.js'
+import { UploadApiResponse } from 'cloudinary'
 
 export const createLesson = asyncHandler(
     async(req: Request, res: Response, next: NextFunction)=>{
-        const {title, type, content, mediaUrl, thumbnailUrl, duration, order,} = req.body;
+        const {title, type, content, duration, order,} = req.body;
         const {courseId} = req.params;
         const user = (req as any).user;
         const course = await Course.findById(courseId);
+        const file = req.file;
 
         if(!course){
             return next(new AppError('Course not found', 404));
@@ -19,6 +22,8 @@ export const createLesson = asyncHandler(
 
         const isOwner = course.instructor.toString() === user._id.toString();
 
+        
+
         if(!isOwner && user.role !== 'admin'){
             return next(new AppError('You can only add lessons to your own course', 403))
         }
@@ -26,24 +31,82 @@ export const createLesson = asyncHandler(
         if(!title || !type){
             return next(new AppError('Title and type are required', 400));
         }
-        if (type === "text" && !content) {
-      return next(new AppError("Text lessons require content", 400));
+
+        const validTypes = ["text", "video", "image", "pdf"];
+
+        if (!validTypes.includes(type)) {
+          return next(new AppError("Invalid lesson type", 400));
         }
 
-        if (["video", "image", "pdf"].includes(type) && !mediaUrl) {
-          return next(new AppError(`${type} lessons require a mediaUrl`, 400));
+        if (type === "text" && !content) {
+          return next(new AppError("Text lessons require content", 400));
         }
+
+        if (["video", "image", "pdf"].includes(type) && !file) {
+          return next(new AppError(`${type} lessons require media`, 400));
+        }
+
+        
+
+        let mediaData:
+          | {
+              url: string;
+              public_id: string;
+            }
+          | undefined;
+
+        if (file) {
+          const mimeTypes = {
+            image: ["image/jpeg", "image/png", "image/webp"],
+            video: ["video/mp4", "video/webm", "video/quicktime"],
+            pdf: ["application/pdf"],
+          };
+
+          if (
+            ["image", "video", "pdf"].includes(type) &&
+            !mimeTypes[type as keyof typeof mimeTypes].includes(file.mimetype)
+          ) {
+            return next(
+              new AppError(`Invalid file type for ${type} lesson`, 400)
+            );
+          }
+
+          const resourceType = type === "video" ? "video" : type === "pdf" ? "raw" : "image";
+
+          const uploadResult = await new Promise<UploadApiResponse>(
+            (resolve, reject) => {
+              const stream = cloudinary.uploader.upload_stream(
+                {
+                  folder: `lessons/${type}`,
+                  resource_type: resourceType as any,
+                },
+                (error, result) => {
+                  if (error) return reject(error);
+                  if (!result) return reject(new Error("Upload failed"));
+                  resolve(result);
+                }
+              );
+
+              stream.end(file.buffer);
+            }
+          );
+
+          mediaData = {
+            url: uploadResult.secure_url,
+            public_id: uploadResult.public_id,
+          };
+        }
+
         const lessonsCount = await Lesson.countDocuments({ course: courseId });
 
         const lesson = await Lesson.create({
-  title,
-  type,
-  content,
-  mediaUrl,
-  thumbnailUrl,
-  duration,
-  order: order ?? lessonsCount + 1,
-  course: courseId,
+          title,
+          type,
+          content,
+          media: mediaData,
+          duration,
+          order: order ?? lessonsCount + 1,
+          course: courseId,
         });
 
         course.lessons.push(lesson._id)
@@ -172,26 +235,25 @@ export const updateLesson = asyncHandler(
       );
     }
 
-    const { type, content, mediaUrl } = req.body;
+    const { type, content, media } = req.body;
 
     const nextType = type ?? lesson.type;
     const nextContent = content ?? lesson.content;
-    const nextMediaUrl = mediaUrl ?? lesson.mediaUrl;
+    const nextMedia = media ?? lesson.media;
 
     if (nextType === "text" && !nextContent) {
       return next(new AppError("Text lessons require content", 400));
     }
 
-    if (["video", "image", "pdf"].includes(nextType) && !nextMediaUrl) {
-      return next(new AppError(`${nextType} lessons require a mediaUrl`, 400));
+    if (["video", "image", "pdf"].includes(nextType) && !nextMedia) {
+      return next(new AppError(`${nextType} lessons require media`, 400));
     }
 
     const allowedFields = [
       "title",
       "type",
       "content",
-      "mediaUrl",
-      "thumbnailUrl",
+      "media",
       "duration",
       "order",
     ];

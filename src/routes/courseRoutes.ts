@@ -12,6 +12,7 @@ import {
 } from "../controllers/courseController.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 import { authorizeRoles } from "../middlewares/authorizeRoles.js";
+import upload from "../middlewares/multer.js";
 
 const router = Router();
 
@@ -56,6 +57,7 @@ router.post(
   "/",
   requireAuth,
   authorizeRoles("instructor", "admin"),
+  upload.single("thumbnail"),
   createCourse
 );
 
@@ -71,6 +73,7 @@ router.patch(
   "/:id",
   requireAuth,
   authorizeRoles("instructor", "admin"),
+  upload.single("thumbnail"),
   updateCourse
 );
 

@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes  from './routes/authroutes.js';
 import courseRoutes from './routes/courseRoutes.js'
 import lessonRoutes from './routes/lessonRoutes.js'
+import uploadRoutes from './routes/uploadRoutes.js'
 import errorHandler from './middlewares/error.middleware.js';
 import { env} from './config/env.js';
 import cookieParser from 'cookie-parser'
@@ -29,7 +30,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes)
 app.use('/api/lessons', lessonRoutes)
-
+app.use('/api/uploads', uploadRoutes);
 
 app.get('/api/hello', (req, res) => {
     res.json({ message: 'Hello, World!' });
