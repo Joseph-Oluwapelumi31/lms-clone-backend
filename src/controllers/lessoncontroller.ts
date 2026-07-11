@@ -8,13 +8,14 @@ import cloudinary from '../config/cloudinary.js'
 import { UploadApiResponse } from 'cloudinary'
 
 export const createLesson = asyncHandler(
-    async(req: Request, res: Response, next: NextFunction)=>{
+     async(req: Request, res: Response, next: NextFunction)=>{
         const {title, type, content, duration, order,} = req.body;
         const {courseId} = req.params;
         const user = (req as any).user;
         const course = await Course.findById(courseId);
         const file = req.file;
-
+        console.log("File received:", file); // Log the file object to check if it's received correctly
+        console.log("Request body:", req.body); // Log the request body to check if the fields are received correctly
         if(!course){
             return next(new AppError('Course not found', 404));
 
@@ -111,7 +112,8 @@ export const createLesson = asyncHandler(
 
         course.lessons.push(lesson._id)
         await course.save();
-
+        console.log(req.body);
+        console.log(req.file);
         res.status(201).json({
           success: true,
           message: "Lesson created successfully",

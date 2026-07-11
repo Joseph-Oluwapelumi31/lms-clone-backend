@@ -9,6 +9,7 @@ import {
 } from "../controllers/lessoncontroller.js";
 import { requireAuth } from "../middlewares/requireAuth.js";
 import { authorizeRoles } from "../middlewares/authorizeRoles.js";
+import upload from "../middlewares/multer.js";
 
 const router = Router();
 
@@ -39,6 +40,7 @@ router.post(
   "/course/:courseId",
   requireAuth,
   authorizeRoles("instructor", "admin"),
+  upload.single("file"),
   createLesson
 );
 
