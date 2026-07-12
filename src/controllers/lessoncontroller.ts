@@ -239,17 +239,26 @@ export const updateLesson = asyncHandler(
 
     const { type, content, media } = req.body;
 
+    
+
     const nextType = type ?? lesson.type;
     const nextContent = content ?? lesson.content;
     const nextMedia = media ?? lesson.media;
 
-    if (nextType === "text" && !nextContent) {
+    const validTypes = ["text", "video", "image", "pdf"];
+
+    if (!validTypes.includes(nextType)) {
+        return next(new AppError("Invalid lesson type", 400));
+    }
+  
+    if (nextType === "text" &&(!nextContent || !nextContent.trim())) {
       return next(new AppError("Text lessons require content", 400));
     }
 
     if (["video", "image", "pdf"].includes(nextType) && !nextMedia) {
       return next(new AppError(`${nextType} lessons require media`, 400));
     }
+
 
     const allowedFields = [
       "title",
